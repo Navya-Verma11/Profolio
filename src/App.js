@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Canvas from './components/Canvas';
 import Sidebar from './components/Sidebar';
-import ElementEditor from './components/ElementEditor'; // Add this line
+import ElementEditor from './components/ElementEditor';
 import ThemeSelector from './components/ThemeSelector';
+import Auth from './components/Auth'; // Import the authentication page
 import './style.css';
 
-function App() {
+function Editor() {
   const [elements, setElements] = useState([]);
   const [selectedElement, setSelectedElement] = useState(null);
   const [theme, setTheme] = useState({
@@ -37,6 +39,18 @@ function App() {
         </div>
       </div>
     </DndProvider>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/editor" element={<Editor />} />
+        <Route path="/" element={<Auth />} /> {/* Redirect to auth by default */}
+      </Routes>
+    </Router>
   );
 }
 

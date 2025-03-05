@@ -1,5 +1,7 @@
 import React from 'react';
 import { v4 as uuid } from 'uuid';
+import { useSignOut } from '@nhost/react';
+import { useNavigate } from 'react-router-dom'; // Import navigation hook
 
 const elementsConfig = [
   { type: 'title', label: 'Title' },
@@ -10,33 +12,41 @@ const elementsConfig = [
 ];
 
 const Sidebar = ({ setElements }) => {
+  const { signOut } = useSignOut();
+  const navigate = useNavigate(); // Get navigation function
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth'); // Redirect to login page
+  };
+
   const handleAddElement = (type) => {
     const newElement = {
       id: uuid(),
       type,
       content: '',
-      position: { x: 100, y: 100 + (Math.random() * 100) },
+      position: { x: 100, y: 100 + Math.random() * 100 },
       size: { width: 200, height: 50 }
     };
-    
+
     if (type === 'image') newElement.content = 'https://via.placeholder.com/200x150';
     if (type === 'link') newElement.content = 'https://example.com';
-    
-    setElements(prev => [...prev, newElement]);
+
+    setElements((prev) => [...prev, newElement]);
   };
 
   return (
     <div className="sidebar">
       <h3>Add Elements</h3>
       {elementsConfig.map((item) => (
-        <button 
-          key={item.type}
-          className="element-button"
-          onClick={() => handleAddElement(item.type)}
-        >
+        <button key={item.type} className="element-button" onClick={() => handleAddElement(item.type)}>
           {item.label}
         </button>
       ))}
+
+      <button className="logout-button" onClick={handleLogout}>
+        Logout
+      </button>
     </div>
   );
 };
