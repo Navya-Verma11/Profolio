@@ -1,116 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { ChromePicker } from 'react-color';
-import { useDropzone } from 'react-dropzone';
+import React from 'react';
+import { Icon } from 'react-icons-kit';
+import { trash } from 'react-icons-kit/feather/trash';
 
-const ElementEditor = ({ selectedElement, setElements }) => {
-  const [edits, setEdits] = useState({});
-  const [showColorPicker, setShowColorPicker] = useState(null);
-  
-  // Initialize edits when element changes
-  useEffect(() => {
-    if (selectedElement) setEdits({ ...selectedElement });
-  }, [selectedElement]);
+const ElementEditor = ({ element, onUpdate, onDelete }) => {
+  if (!element) return <div className="element-editor">Select an element to edit</div>;
 
-  // Handle file drops for image upload
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: {'image/*': []},
-    onDrop: files => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setEdits(prev => ({ ...prev, content: reader.result }));
-      };
-      reader.readAsDataURL(files[0]);
-    }
-  });
-
-  const handleSave = () => {
-    setElements(prev => prev.map(el => 
-      el.id === selectedElement.id ? { ...el, ...edits } : el
-    ));
+  const handleStyleChange = (property, value) => {
+    onUpdate({
+      ...element,
+      style: {
+        ...element.style,
+        [property]: value,
+      },
+    });
   };
-
-  const handleStyleChange = (prop, value) => {
-    setEdits(prev => ({
-      ...prev,
-      customStyles: { ...prev.customStyles, [prop]: value }
-    }));
-  };
-
-  if (!selectedElement) return <div className="editor-placeholder">Select an element to edit</div>;
 
   return (
     <div className="element-editor">
-      <h3>Edit {selectedElement.type}</h3>
-
-      {selectedElement.type === 'text' && (
-        <div className="style-controls">
-          <label>Font Family:
-            <select 
-              value={edits.fontFamily || ''}
-              onChange={(e) => setEdits(prev => ({ ...prev, fontFamily: e.target.value }))}
+      <h3>Element Settings</h3>
+      {element.type === 'text' && (
+        <>
+          <div className="form-group">
+            <label>Font Family</label>
+            <select
+              value={element.style.fontFamily}
+              onChange={(e) => handleStyleChange('fontFamily', e.target.value)}
             >
-              <option value="">Default</option>
               <option value="Arial">Arial</option>
               <option value="Helvetica">Helvetica</option>
               <option value="Times New Roman">Times New Roman</option>
+              <option value="Verdana">Verdana</option>
             </select>
-          </label>
+          </div>
 
-          <label>Font Size:
+          <div className="form-group">
+            <label>Font Size (px)</label>
             <input
               type="number"
-              value={edits.fontSize || ''}
-              onChange={(e) => setEdits(prev => ({ ...prev, fontSize: `${e.target.value}px` }))}
+              value={parseInt(element.style.fontSize)}
+              onChange={(e) => handleStyleChange('fontSize', `${e.target.value}px`)}
             />
-          </label>
-        </div>
-      )}
+          </div>
 
-      {selectedElement.type === 'image' && (
-        <div className="image-upload" {...getRootProps()}>
-          <input {...getInputProps()} />
-          <button>Upload Image</button>
-          {edits.content && (
-            <div className="image-preview">
-              <img src={edits.content} alt="Preview" />
-            </div>
-          )}
-        </div>
-      )}
-
-      {selectedElement.type === 'link' && (
-        <div className="link-controls">
-          <label>Link URL:
+          <div className="form-group">
+            <label>Text Color</label>
             <input
-              type="url"
-              value={edits.url || ''}
-              onChange={(e) => setEdits(prev => ({ ...prev, url: e.target.value }))}
+              type="color"
+              value={element.style.color}
+              onChange={(e) => handleStyleChange('color', e.target.value)}
             />
-          </label>
-          <label>Display Text:
-            <input
-              type="text"
-              value={edits.linkText || ''}
-              onChange={(e) => setEdits(prev => ({ ...prev, linkText: e.target.value }))}
-            />
-          </label>
-        </div>
+          </div>
+        </>
       )}
 
-      <div className="color-controls">
-        <button onClick={() => setShowColorPicker('color')}>Text Color</button>
-        <button onClick={() => setShowColorPicker('backgroundColor')}>Background</button>
-        
-        {showColorPicker && (
-          <ChromePicker
-            color={edits[showColorPicker] || '#000000'}
-            onChangeComplete={(color) => handleStyleChange(showColorPicker, color.hex)}
-            onChange={(color) => handleStyleChange(showColorPicker, color.hex)}
-          />
-        )}
+      <div className="form-group">
+        <label>Background Color</label>
+        <input
+          type="color"
+          value={element.style.backgroundColor}
+          onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+        />
       </div>
 
-      <button onClick={handleSave}>Save Changes</button>
+      <button className="delete-btn" onClick={onDelete}>
+        <Icon icon={trash} size={16} /> Delete Element
+      </button>
     </div>
   );
 };

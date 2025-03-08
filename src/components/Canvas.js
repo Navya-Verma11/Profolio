@@ -2,26 +2,42 @@ import React from 'react';
 import { useDrop } from 'react-dnd';
 import Element from './Element';
 
-const Canvas = ({ elements, setElements, selectedElement, setSelectedElement }) => {
-  const [, drop] = useDrop(() => ({
-    accept: 'ELEMENT',
+const Canvas = ({ elements, background, dispatch, selectedElement, setSelectedElement }) => {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'element',
     drop: (item, monitor) => {
-      const delta = monitor.getDifferenceFromInitialOffset();
-      const newPosition = {
-        x: Math.round(item.position.x + delta.x),
-        y: Math.round(item.position.y + delta.y)
-      };
+      const offset = monitor.getClientOffset();
+      const rect = document.querySelector('.canvas').getBoundingClientRect();
       
-      setElements(prev => prev.map(el => 
-        el.id === item.id ? { ...el, position: newPosition } : el
-      ));
-    }
+      if (offset) {
+        dispatch({
+          type: 'ADD_ELEMENT',
+          payload: {
+            ...item,
+            id: Date.now(),
+            x: offset.x - rect.left - item.width/2,
+            y: offset.y - rect.top - item.height/2,
+            color: '#000000',
+            fontFamily: 'Arial'
+          }
+        });
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
   }));
 
   return (
     <div 
       ref={drop}
-      className="canvas"
+      className="canvas" 
+      style={{ 
+        background,
+        position: 'relative',
+        overflow: 'hidden',
+        border: isOver ? '2px dashed #007bff' : 'none' 
+      }}
       onClick={() => setSelectedElement(null)}
     >
       {elements.map(element => (
@@ -29,8 +45,11 @@ const Canvas = ({ elements, setElements, selectedElement, setSelectedElement }) 
           key={element.id}
           element={element}
           isSelected={selectedElement?.id === element.id}
-          setSelectedElement={setSelectedElement}
-          setElements={setElements}
+          onSelect={setSelectedElement}
+          onUpdate={(updates) => dispatch({
+            type: 'UPDATE_ELEMENT',
+            payload: { id: element.id, ...updates }
+          })}
         />
       ))}
     </div>
