@@ -1,14 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.js';
-import './style.css';
+import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  
-  <NhostProvider nhost={nhost}>
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  </NhostProvider>,
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useReducer, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Canvas from './components/Canvas';
-import Sidebar from './components/Sidebar';
-import ElementEditor from './components/ElementEditor'; // Add this line
-import ThemeSelector from './components/ThemeSelector';
+import Header from './components/Header';
+import LeftSidebar from './components/LeftSidebar';
+import RightSidebar from './components/RightSidebar';
 import './style.css';
 
 const initialState = {
@@ -38,7 +38,7 @@ function reducer(state, action) {
 }
 
 function App() {
-  const [elements, setElements] = useState([]);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedElement, setSelectedElement] = useState(null);
 
   const handleSave = () => {
@@ -66,18 +66,6 @@ function App() {
         </div>
       </div>
     </DndProvider>
-  );
-}
-
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/editor" element={<Editor />} />
-        <Route path="/" element={<Auth />} /> {/* Redirect to auth by default */}
-      </Routes>
-    </Router>
   );
 }
 
