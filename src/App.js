@@ -1,6 +1,10 @@
-import { useReducer, useState } from 'react';
+import { useReducer, useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useAuthenticationStatus, useSignOut } from '@nhost/react';
+
+import Auth from './components/Auth';
 import Canvas from './components/Canvas';
 import Header from './components/Header';
 import LeftSidebar from './components/LeftSidebar';
@@ -37,9 +41,10 @@ function reducer(state, action) {
   }
 }
 
-function App() {
+const Editor = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedElement, setSelectedElement] = useState(null);
+  const { signOut } = useSignOut();
 
   const handleSave = () => {
     localStorage.setItem('portfolioDesign', JSON.stringify(state));
@@ -48,7 +53,11 @@ function App() {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
-        <Header onReset={() => dispatch({ type: 'RESET' })} onSave={handleSave} />
+        <Header 
+          onReset={() => dispatch({ type: 'RESET' })} 
+          onSave={handleSave} 
+          onLogout={signOut} // Logout button
+        />
         <div className="main-content">
           <LeftSidebar dispatch={dispatch} />
           <Canvas 
@@ -66,6 +75,24 @@ function App() {
         </div>
       </div>
     </DndProvider>
+  );
+};
+
+function App() {
+  const { isAuthenticated, isLoading } = useAuthenticationStatus();
+
+  if (isLoading) return <p>Loading...</p>; // Show loading state
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={isAuthenticated ? <Navigate to="/editor" /> : <Auth />} />
+        <Route 
+          path="/editor" 
+          element={isAuthenticated ? <Editor /> : <Navigate to="/" />} 
+        />
+      </Routes>
+    </Router>
   );
 }
 

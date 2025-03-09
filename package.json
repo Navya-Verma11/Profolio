@@ -7,6 +7,8 @@
     "test": "react-scripts test"
   },
   "dependencies": {
+    "@nhost/nhost-js": "^3.2.5",
+    "@nhost/react": "^3.10.1",
     "@react-icons/all-files": "^4.1.0",
     "react": "^18.3.1",
     "react-color": "^2.19.3",
@@ -20,6 +22,7 @@
     "react-icons-kit": "^2.0.0",
     "react-resizable": "^3.0.5",
     "react-rnd": "^10.5.2",
+    "react-router-dom": "^7.3.0",
     "react-scripts": "5.0.1",
     "styled-components": "^6.1.15",
     "uuid": "^9.0.1"
