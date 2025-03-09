@@ -2,7 +2,8 @@ import { useReducer, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useAuthenticationStatus, useSignOut } from '@nhost/react';
+import { useAuthenticationStatus, useSignOut, useUserData } from '@nhost/react';
+import nhost from './nhost'; // Ensure nhost is correctly imported
 
 import Auth from './components/Auth';
 import Canvas from './components/Canvas';
@@ -23,7 +24,7 @@ function reducer(state, action) {
     case 'UPDATE_ELEMENT':
       return {
         ...state,
-        elements: state.elements.map(el => 
+        elements: state.elements.map(el =>
           el.id === action.payload.id ? { ...el, ...action.payload } : el
         )
       };
@@ -34,6 +35,8 @@ function reducer(state, action) {
       };
     case 'SET_BACKGROUND':
       return { ...state, background: action.payload };
+    case 'LOAD_PORTFOLIO':
+      return action.payload;
     case 'RESET':
       return initialState;
     default:
@@ -45,18 +48,45 @@ const Editor = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedElement, setSelectedElement] = useState(null);
   const { signOut } = useSignOut();
+  const user = useUserData();
 
-  const handleSave = () => {
-    localStorage.setItem('portfolioDesign', JSON.stringify(state));
-  };
+  // Load user's last saved portfolio
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await nhost.graphql.request(`
+          query {
+            portfolios(where: { user_id: { _eq: "${user.id}" } }, order_by: { created_at: desc }, limit: 1) {
+              json_url
+            }
+          }
+        `);
+
+        if (error) throw new Error(error.message);
+        if (data.portfolios.length === 0) return;
+
+        // Fetch the JSON file from storage
+        const response = await fetch(data.portfolios[0].json_url);
+        const portfolioData = await response.json();
+        dispatch({ type: 'LOAD_PORTFOLIO', payload: portfolioData });
+
+      } catch (err) {
+        console.error("Error loading portfolio:", err);
+      }
+    };
+
+    fetchPortfolio();
+  }, [user]);
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
         <Header 
           onReset={() => dispatch({ type: 'RESET' })} 
-          onSave={handleSave} 
-          onLogout={signOut} // Logout button
+          elements={state.elements}
+          background={state.background}
         />
         <div className="main-content">
           <LeftSidebar dispatch={dispatch} />
@@ -73,6 +103,7 @@ const Editor = () => {
             setSelectedElement={setSelectedElement}
           />
         </div>
+        <button onClick={signOut} className="logout-btn">Logout</button>
       </div>
     </DndProvider>
   );
@@ -81,7 +112,7 @@ const Editor = () => {
 function App() {
   const { isAuthenticated, isLoading } = useAuthenticationStatus();
 
-  if (isLoading) return <p>Loading...</p>; // Show loading state
+  if (isLoading) return <p>Loading...</p>;
 
   return (
     <Router>

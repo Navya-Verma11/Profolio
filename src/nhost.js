@@ -1,7 +1,7 @@
 import { NhostClient } from '@nhost/nhost-js';
 
 const nhost = new NhostClient({
-  subdomain: 'gekkkkxglotilrjdsizj', 
+  subdomain: 'gekkkkxglotilrjdsizj',
   region: 'ap-south-1',
 });
 

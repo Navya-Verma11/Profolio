@@ -7,9 +7,12 @@
     "test": "react-scripts test"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.3",
+    "@nhost/apollo": "^8.0.5",
     "@nhost/nhost-js": "^3.2.5",
     "@nhost/react": "^3.10.1",
     "@react-icons/all-files": "^4.1.0",
+    "graphql": "^16.10.0",
     "react": "^18.3.1",
     "react-color": "^2.19.3",
     "react-colorful": "^5.6.1",
