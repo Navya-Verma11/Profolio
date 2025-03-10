@@ -1,68 +1,12 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useUserData, useNhostClient } from '@nhost/react';
-import { gql, useMutation } from '@apollo/client';
+import React, { useState } from 'react';
 
-const SAVE_PORTFOLIO_MUTATION = gql`
-  mutation SavePortfolio($user_id: uuid!, $name: String!, $json_url: String!, $id: uuid) {
-    insert_portfolios_one(
-      object: { 
-        user_id: $user_id, 
-        name: $name, 
-        json_url: $json_url, 
-        id: $id 
-      },
-      on_conflict: {
-        constraint: portfolios_pkey,
-        update_columns: [name, json_url]
-      }
-    ) {
-      id
-    }
-  }
-`;
-
-const Header = ({ state, dispatch, onReset }) => {
-  const navigate = useNavigate();
-  const nhost = useNhostClient();
-  const user = useUserData();
-  const [savePortfolio] = useMutation(SAVE_PORTFOLIO_MUTATION);
+const Header = ({ onReset, onSave }) => {
+  const [isSaving, setIsSaving] = useState(false); // Track saving state
 
   const handleSave = async () => {
-    if (!user) return;
-
-    try {
-      const portfolioData = JSON.stringify({
-        elements: state.elements,
-        background: state.background
-      });
-
-      const file = new File([portfolioData], `portfolio-${Date.now()}.json`, {
-        type: 'application/json'
-      });
-
-      const { fileMetadata, error } = await nhost.storage.upload({ file });
-      if (error) throw error;
-
-      const fileUrl = nhost.storage.getPublicUrl({ fileId: fileMetadata.id });
-
-      const { data, errors } = await savePortfolio({
-        variables: {
-          user_id: user.id,
-          name: `Design ${new Date().toLocaleDateString()}`,
-          json_url: fileUrl,
-          id: state.projectId
-        }
-      });
-
-      if (errors) throw errors;
-
-      navigate('/dashboard');
-      alert('Design saved successfully!');
-    } catch (err) {
-      console.error('Save error:', err);
-      alert('Error saving design');
-    }
+    setIsSaving(true);
+    await onSave(); // Call the actual save function
+    setIsSaving(false);
   };
 
   return (
@@ -97,22 +41,27 @@ const Header = ({ state, dispatch, onReset }) => {
           Reset Canvas
         </button>
         <button 
-          onClick={handleSave}
+          onClick={handleSave} // Uses internal function to manage state
+          disabled={isSaving} 
           style={{
             padding: '12px 24px',
-            background: '#10b981',
+            background: isSaving ? '#94a3b8' : '#10b981',
             border: 'none',
             borderRadius: '8px',
             color: 'white',
             fontSize: '1.1rem',
-            cursor: 'pointer',
+            cursor: isSaving ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s ease',
             fontWeight: '600'
           }}
-          onMouseOver={(e) => e.target.style.background = '#059669'}
-          onMouseOut={(e) => e.target.style.background = '#10b981'}
+          onMouseOver={(e) => {
+            if (!isSaving) e.target.style.background = '#059669';
+          }}
+          onMouseOut={(e) => {
+            if (!isSaving) e.target.style.background = '#10b981';
+          }}
         >
-          Save Design
+          {isSaving ? 'Saving...' : 'Save Design'}
         </button>
       </div>
       <h1 style={{
@@ -126,10 +75,6 @@ const Header = ({ state, dispatch, onReset }) => {
       }}>
         PROFOLIO
       </h1>
-      <nav>
-        <Link to="/dashboard" style={{ color: 'white', marginRight: '1rem' }}>Dashboard</Link>
-        <Link to="/profile" style={{ color: 'white' }}>Profile</Link>
-      </nav>
     </header>
   );
 };
