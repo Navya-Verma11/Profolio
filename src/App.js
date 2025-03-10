@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useAuthenticationStatus, useSignOut, useUserData } from '@nhost/react';
-import nhost from './nhost'; // Ensure nhost is correctly imported
+import { gql } from 'graphql-request';
+import nhost from './nhost';
 
 import Auth from './components/Auth';
 import Canvas from './components/Canvas';
@@ -44,9 +45,18 @@ function reducer(state, action) {
   }
 }
 
+const SAVE_PORTFOLIO = gql`
+  mutation SavePortfolio($userId: uuid!, $data: jsonb!, $background: String!) {
+    insert_portfolios_one(object: { user_id: $userId, data: $data, background: $background }) {
+      id
+    }
+  }
+`;
+
 const Editor = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedElement, setSelectedElement] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { signOut } = useSignOut();
   const user = useUserData();
 
@@ -59,7 +69,8 @@ const Editor = () => {
         const { data, error } = await nhost.graphql.request(`
           query {
             portfolios(where: { user_id: { _eq: "${user.id}" } }, order_by: { created_at: desc }, limit: 1) {
-              json_url
+              data
+              background
             }
           }
         `);
@@ -67,11 +78,7 @@ const Editor = () => {
         if (error) throw new Error(error.message);
         if (data.portfolios.length === 0) return;
 
-        // Fetch the JSON file from storage
-        const response = await fetch(data.portfolios[0].json_url);
-        const portfolioData = await response.json();
-        dispatch({ type: 'LOAD_PORTFOLIO', payload: portfolioData });
-
+        dispatch({ type: 'LOAD_PORTFOLIO', payload: data.portfolios[0] });
       } catch (err) {
         console.error("Error loading portfolio:", err);
       }
@@ -80,13 +87,39 @@ const Editor = () => {
     fetchPortfolio();
   }, [user]);
 
+  // Function to save portfolio
+  const handleSave = async () => {
+    if (!user) {
+      alert('You need to be logged in to save your portfolio.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const { data, error } = await nhost.graphql.request(SAVE_PORTFOLIO, {
+        userId: user.id,
+        data: state.elements,
+        background: state.background
+      });
+
+      if (error) throw error;
+
+      alert('Portfolio saved successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save portfolio.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
         <Header 
           onReset={() => dispatch({ type: 'RESET' })} 
-          elements={state.elements}
-          background={state.background}
+          onSave={handleSave}
         />
         <div className="main-content">
           <LeftSidebar dispatch={dispatch} />
