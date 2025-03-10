@@ -2,9 +2,27 @@ import React from 'react';
 import { useDrag } from 'react-dnd';
 
 const textElements = [
-  { type: 'text', label: 'Title', fontSize: 36, width: 200, height: 80 },
-  { type: 'text', label: 'Subtitle', fontSize: 24, width: 200, height: 60 },
-  { type: 'text', label: 'Body', fontSize: 16, width: 200, height: 40 }
+  { 
+    type: 'text', 
+    label: 'Title', 
+    fontSize: 36,
+    width: 400,
+    height: 80 
+  },
+  { 
+    type: 'text', 
+    label: 'Subtitle', 
+    fontSize: 24,
+    width: 400,
+    height: 60 
+  },
+  { 
+    type: 'text', 
+    label: 'Body', 
+    fontSize: 16,
+    width: 400,
+    height: 40 
+  }
 ];
 
 const DraggableItem = ({ label, fontSize, type, width, height }) => {
@@ -61,5 +79,7 @@ const ElementPalette = ({ dispatch }) => {
     </div>
   );
 };
+
+
 
 export default ElementPalette;

@@ -20,8 +20,13 @@ const RightSidebar = ({ element, dispatch, setSelectedElement }) => {
               value={element.fontSize}
               onChange={(e) => dispatch({
                 type: 'UPDATE_ELEMENT',
-                payload: { id: element.id, fontSize: parseInt(e.target.value) }
+                payload: { 
+                  id: element.id, 
+                  fontSize: Math.max(12, parseInt(e.target.value) || 16) 
+                }
               })}
+              min="12"
+              max="72"
             />
           </div>
           <div className="property-control">

@@ -1,12 +1,14 @@
 import { useReducer, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useAuthenticationStatus, useSignOut, useUserData } from '@nhost/react';
-import { gql } from 'graphql-request';
+import { gql } from 'graphql-request';  // Kept from HEAD
 import nhost from './nhost';
 
 import Auth from './components/Auth';
+import Dashboard from './components/Dashboard/Dashboard';
+import Profile from './components/Profile/Profile';
 import Canvas from './components/Canvas';
 import Header from './components/Header';
 import LeftSidebar from './components/LeftSidebar';
@@ -15,7 +17,8 @@ import './style.css';
 
 const initialState = {
   elements: [],
-  background: '#ffffff'
+  background: '#ffffff',
+  projectId: null
 };
 
 function reducer(state, action) {
@@ -37,9 +40,9 @@ function reducer(state, action) {
     case 'SET_BACKGROUND':
       return { ...state, background: action.payload };
     case 'LOAD_PORTFOLIO':
-      return action.payload;
+      return { ...action.payload, projectId: action.projectId };
     case 'RESET':
-      return initialState;
+      return { ...initialState, projectId: state.projectId };
     default:
       return state;
   }
@@ -54,38 +57,63 @@ const SAVE_PORTFOLIO = gql`
 `;
 
 const Editor = () => {
+  const { projectId } = useParams();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedElement, setSelectedElement] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const { signOut } = useSignOut();
   const user = useUserData();
 
-  // Load user's last saved portfolio
   useEffect(() => {
     const fetchPortfolio = async () => {
       if (!user) return;
 
       try {
-        const { data, error } = await nhost.graphql.request(`
-          query {
-            portfolios(where: { user_id: { _eq: "${user.id}" } }, order_by: { created_at: desc }, limit: 1) {
-              data
-              background
+        let query;
+        if (projectId) {
+          query = `
+            query {
+              portfolios_by_pk(id: "${projectId}") {
+                json_url
+              }
             }
-          }
-        `);
+          `;
+        } else {
+          query = `
+            query {
+              portfolios(where: { user_id: { _eq: "${user.id}" } }, order_by: { created_at: desc }, limit: 1) {
+                data
+                background
+              }
+            }
+          `;
+        }
 
-        if (error) throw new Error(error.message);
-        if (data.portfolios.length === 0) return;
+        const { data, error } = await nhost.graphql.request(query);
+        if (error) throw error;
 
-        dispatch({ type: 'LOAD_PORTFOLIO', payload: data.portfolios[0] });
+        if (projectId && data.portfolios_by_pk) {
+          const response = await fetch(data.portfolios_by_pk.json_url);
+          const portfolioData = await response.json();
+          dispatch({
+            type: 'LOAD_PORTFOLIO',
+            payload: portfolioData,
+            projectId
+          });
+        } else if (!projectId && data.portfolios.length > 0) {
+          dispatch({
+            type: 'LOAD_PORTFOLIO',
+            payload: data.portfolios[0]
+          });
+        }
+
       } catch (err) {
         console.error("Error loading portfolio:", err);
       }
     };
 
     fetchPortfolio();
-  }, [user]);
+  }, [user, projectId]);
 
   // Function to save portfolio
   const handleSave = async () => {
@@ -136,7 +164,6 @@ const Editor = () => {
             setSelectedElement={setSelectedElement}
           />
         </div>
-        <button onClick={signOut} className="logout-btn">Logout</button>
       </div>
     </DndProvider>
   );
@@ -145,16 +172,15 @@ const Editor = () => {
 function App() {
   const { isAuthenticated, isLoading } = useAuthenticationStatus();
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading) return <div className="loading">Loading...</div>;
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={isAuthenticated ? <Navigate to="/editor" /> : <Auth />} />
-        <Route 
-          path="/editor" 
-          element={isAuthenticated ? <Editor /> : <Navigate to="/" />} 
-        />
+        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Auth />} />
+        <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/" />} />
+        <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/" />} />
+        <Route path="/editor/:projectId?" element={isAuthenticated ? <Editor /> : <Navigate to="/" />} />
       </Routes>
     </Router>
   );
