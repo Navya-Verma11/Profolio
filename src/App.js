@@ -79,23 +79,12 @@ function reducer(state, action) {
         currentPage: action.payload
       };
 
-    // Add to reducer cases
-case 'DELETE_PAGE':
-  return {
-    ...state,
-    pages: state.pages.filter((_, index) => index !== action.payload),
-    currentPage: state.currentPage >= action.payload ? 
-      Math.max(0, state.currentPage - 1) : 
-      state.currentPage
-  };
-
-    // Add new case to reducer
-case 'REMOVE_PAGE':
-  return {
-    ...state,
-    pages: state.pages.filter((_, index) => index !== action.payload),
-    currentPage: Math.min(state.currentPage, state.pages.length - 2)
-  };
+    case 'REMOVE_PAGE':
+      return {
+        ...state,
+        pages: state.pages.filter((_, index) => index !== action.payload),
+        currentPage: Math.min(state.currentPage, state.pages.length - 2)
+      };
 
     case 'RESET':
       return initialState;
@@ -121,7 +110,10 @@ const Editor = () => {
           onReset={() => dispatch({ type: 'RESET' })}
         />
         <div className="main-content">
-          <LeftSidebar dispatch={dispatch} />
+          <LeftSidebar 
+            dispatch={dispatch} 
+            currentPage={currentPage} // Pass current page to left sidebar
+          />
           <Canvas 
             elements={pages[currentPage].elements}
             background={pages[currentPage].background}
@@ -158,7 +150,5 @@ function App() {
     </Router>
   );
 }
-
-
 
 export default App;

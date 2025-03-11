@@ -2,7 +2,7 @@ import React from 'react';
 import BackgroundEditor from './BackgroundEditor';
 import ElementPalette from './ElementPalette';
 
-const LeftSidebar = ({ dispatch }) => {
+const LeftSidebar = ({ dispatch, currentPage }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -18,6 +18,7 @@ const LeftSidebar = ({ dispatch }) => {
             y: 100,
             width: 200,
             height: 200,
+            page: currentPage // Add current page reference
           }
         });
       };
@@ -28,8 +29,18 @@ const LeftSidebar = ({ dispatch }) => {
   return (
     <div className="sidebar left-sidebar">
       <ElementPalette dispatch={dispatch} />
-      <input type="file" accept="image/*" onChange={handleImageUpload} />
-      <BackgroundEditor dispatch={dispatch} />
+      <div className="upload-section">
+        <label className="image-upload-button">
+          📁 Upload Image
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleImageUpload} 
+            style={{ display: 'none' }}
+          />
+        </label>
+      </div>
+      <BackgroundEditor dispatch={dispatch} currentPage={currentPage} />
     </div>
   );
 };

@@ -539,3 +539,25 @@ body {
 .element.selected {
   border-color: #4f46e5;
 }
+
+.image-upload-button {
+  padding: 10px 20px;
+  background: #4f46e5;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-block;
+  margin: 10px 0;
+}
+
+.image-upload-button:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.upload-section {
+  padding: 15px 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 15px;
+}

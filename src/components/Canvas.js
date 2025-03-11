@@ -95,21 +95,22 @@ const Canvas = ({ elements, background, dispatch, selectedElement, setSelectedEl
           border: isOver ? '2px dashed #4f46e5' : 'none'
         }}
       >
-        {elements
-          .filter(element => element.page === currentPage)
-          .map(element => (
-            <Element
-              key={element.id}
-              element={element}
-              isSelected={selectedElement?.id === element.id}
-              onSelect={setSelectedElement}
-              onUpdate={(updates) => dispatch({
-                type: 'UPDATE_ELEMENT',
-                payload: { ...updates, id: element.id }
-              })}
-              scale={scale}
-            />
-        ))}
+       
+{elements
+  .filter(element => element.page === currentPage)
+  .map(element => (
+    <Element
+      key={element.id}
+      element={element}
+      isSelected={selectedElement?.id === element.id}
+      onSelect={setSelectedElement}
+      onUpdate={(updates) => dispatch({
+        type: 'UPDATE_ELEMENT',
+        payload: { ...element, ...updates }
+      })}
+      scale={scale} // Ensure scale is passed here
+    />
+))}
       </div>
 
       {/* Control Bar */}
