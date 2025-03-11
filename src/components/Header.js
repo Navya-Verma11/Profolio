@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Header = ({ onReset, onSave }) => {
+const Header = ({ onReset, onSave, onDownload }) => {
   const [isSaving, setIsSaving] = useState(false); // Track saving state
 
   const handleSave = async () => {
@@ -41,8 +41,8 @@ const Header = ({ onReset, onSave }) => {
           Reset Canvas
         </button>
         <button 
-          onClick={handleSave} // Uses internal function to manage state
-          disabled={isSaving} 
+          onClick={handleSave}
+          disabled={isSaving}
           style={{
             padding: '12px 24px',
             background: isSaving ? '#94a3b8' : '#10b981',
@@ -62,6 +62,25 @@ const Header = ({ onReset, onSave }) => {
           }}
         >
           {isSaving ? 'Saving...' : 'Save Design'}
+        </button>
+        {/* ✅ New Download Button */}
+        <button 
+          onClick={onDownload}
+          style={{
+            padding: '12px 24px',
+            background: '#3b82f6',
+            border: 'none',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '1.1rem',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            fontWeight: '600'
+          }}
+          onMouseOver={(e) => e.target.style.background = '#2563eb'}
+          onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+        >
+          Download PDF
         </button>
       </div>
       <h1 style={{

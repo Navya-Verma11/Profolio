@@ -5,6 +5,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useAuthenticationStatus, useSignOut, useUserData } from '@nhost/react';
 import { gql } from 'graphql-request';
 import nhost from './nhost';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 import Dashboard from './components/Dashboard/Dashboard';
 import Profile from './components/Profile/Profile';
@@ -94,11 +96,10 @@ const Editor = () => {
   
         const portfolio = data.portfolios[0];
   
-        // Ensure elements exist before dispatching
         dispatch({ 
           type: 'LOAD_PORTFOLIO', 
           payload: {
-            elements: portfolio.data || [], // Ensure elements is an array
+            elements: portfolio.data || [],
             background: portfolio.background || '#ffffff'
           }
         });
@@ -109,7 +110,7 @@ const Editor = () => {
   
     fetchPortfolio();
   }, [user]);
-  
+
   // Save Portfolio Function
   const handleSave = async () => {
     if (!user) {
@@ -137,22 +138,52 @@ const Editor = () => {
     }
   };
 
+  // ✅ Improved Download Function
+  const handleDownload = async () => {
+    const canvasElement = document.querySelector('.canvas');
+    if (!canvasElement) {
+      alert('Nothing to download');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(canvasElement, {
+        scale: 2, // Improves image quality
+        useCORS: true // Handles cross-origin issues
+      });
+      const imgData = canvas.toDataURL('image/png');
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save('portfolio.pdf');
+    } catch (err) {
+      console.error("Download Error:", err);
+      alert('Failed to generate PDF.');
+    }
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
         <Header 
           onReset={() => dispatch({ type: 'RESET' })} 
           onSave={handleSave}
-          isSaving={isSaving} // Pass isSaving state to Header
+          onDownload={handleDownload} // ✅ Added download button action
+          isSaving={isSaving}
         />
         <div className="main-content">
           <LeftSidebar dispatch={dispatch} />
+          {/* ✅ Ensure Canvas has `.canvas` class */}
           <Canvas 
-            elements={state.elements} 
+            elements={state.elements}
             background={state.background}
             dispatch={dispatch}
             selectedElement={selectedElement}
             setSelectedElement={setSelectedElement}
+            className="canvas" // ✅ Added className
           />
           <RightSidebar 
             element={selectedElement}
@@ -165,6 +196,7 @@ const Editor = () => {
     </DndProvider>
   );
 };
+
 
 function App() {
   const { isAuthenticated, isLoading } = useAuthenticationStatus();
