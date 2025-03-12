@@ -38,7 +38,7 @@ function reducer(state, action) {
     case 'UPDATE_ELEMENT':
       return {
         ...state,
-        pages: state.pages.map(page => ({
+        pages: state.pages.map((page) => ({
           ...page,
           elements: page.elements.map(el => 
             el.id === action.payload.id ? { ...el, ...action.payload } : el
@@ -80,10 +80,14 @@ function reducer(state, action) {
       };
 
     case 'REMOVE_PAGE':
+      if (state.pages.length <= 1) return state;
+      
       return {
         ...state,
         pages: state.pages.filter((_, index) => index !== action.payload),
-        currentPage: Math.min(state.currentPage, state.pages.length - 2)
+        currentPage: action.payload >= state.pages.length - 1 
+          ? state.pages.length - 2 
+          : state.currentPage
       };
 
     case 'RESET':

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import { useDrop } from 'react-dnd';
 import Element from './Element';
 import AddIcon from '../assets/AddIcon';
@@ -12,12 +12,14 @@ const A4_HEIGHT = 1123;
 const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, setSelectedElement, pages, currentPage }, ref) => {
   const [scale, setScale] = useState(1);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const canvasRef = useRef(null);
 
+  // The key fix: include currentPage in the drop dependencies
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'element',
     drop: (item, monitor) => {
       const offset = monitor.getClientOffset();
-      const rect = document.querySelector('.canvas-container').getBoundingClientRect();
+      const rect = canvasRef.current.getBoundingClientRect();
 
       if (offset) {
         dispatch({
@@ -29,7 +31,7 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
             y: (offset.y - rect.top - item.height / 2) / scale,
             color: '#000000',
             fontFamily: 'Arial',
-            page: currentPage
+            page: currentPage // Ensure this is set correctly
           }
         });
       }
@@ -37,21 +39,34 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }));
+  }), [scale, currentPage]); // Add currentPage dependency here
+
+  const handleCanvasClick = (e) => {
+    if (e.target === canvasRef.current) {
+      setSelectedElement(null);
+    }
+  };
 
   useEffect(() => {
     const updateSize = () => {
       const container = document.querySelector('.canvas-wrapper');
-      setContainerSize({
-        width: container.offsetWidth,
-        height: container.offsetHeight
-      });
+      if (container) {
+        setContainerSize({
+          width: container.offsetWidth,
+          height: container.offsetHeight
+        });
+      }
     };
 
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
+
+  // Reset selected element when changing pages
+  useEffect(() => {
+    setSelectedElement(null);
+  }, [currentPage]);
 
   const handleWheel = (e) => {
     if (e.ctrlKey) {
@@ -81,11 +96,16 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
   };
 
   return (
-    <div className="canvas-wrapper" onWheel={handleWheel}>
+    <div 
+      className="canvas-wrapper" 
+      onWheel={handleWheel}
+      onClick={handleCanvasClick}
+    >
       <div
-        className="canvas-container canvas"
+        className="canvas-container"
         ref={(node) => {
-          drop(node); // Connect drag-and-drop reference
+          canvasRef.current = node;
+          drop(node);
           if (ref) ref.current = node; // Forward the ref correctly
         }}
         style={{
@@ -94,8 +114,11 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
           width: A4_WIDTH,
           height: A4_HEIGHT,
           background,
-          border: isOver ? '2px dashed #4f46e5' : 'none'
+          border: isOver ? '2px dashed #4f46e5' : '1px solid #e5e7eb',
+          position: 'relative',
+          cursor: 'default'
         }}
+        data-page={currentPage} // Add a data attribute to help with debugging
       >
         {elements
           .filter(element => element.page === currentPage)

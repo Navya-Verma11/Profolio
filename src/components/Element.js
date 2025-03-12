@@ -5,7 +5,9 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
   const handleDragStop = (e, d) => {
     onUpdate({ 
       x: d.x / scale,
-      y: d.y / scale
+      y: d.y / scale,
+      // Make sure to preserve the page property
+      page: element.page
     });
   };
 
@@ -14,7 +16,9 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
       width: parseInt(ref.style.width),
       height: parseInt(ref.style.height),
       x: position.x / scale,
-      y: position.y / scale
+      y: position.y / scale,
+      // Make sure to preserve the page property
+      page: element.page
     });
   };
 
@@ -44,12 +48,15 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
       style={{
         zIndex: isSelected ? 1000 : 1,
         border: isSelected ? '2px dashed #4f46e5' : 'none',
-        background: 'transparent'
+        background: 'transparent',
+        cursor: 'move'
       }}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(element);
       }}
+      data-element-id={element.id}
+      data-element-page={element.page}
     >
       {element.type === 'text' ? (
         <div
@@ -64,7 +71,10 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
             fontSize: `${element.fontSize}px`,
             color: element.color
           }}
-          onBlur={(e) => onUpdate({ content: e.target.innerHTML })}
+          onBlur={(e) => onUpdate({ 
+            content: e.target.innerHTML,
+            page: element.page // Preserve page on updates
+          })}
           dangerouslySetInnerHTML={{ __html: element.content || 'Click to edit' }}
         />
       ) : (

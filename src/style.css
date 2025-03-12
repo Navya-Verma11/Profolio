@@ -422,12 +422,21 @@ body {
   background: #f1f5f9;
 }
 
-/* Canvas itself */
 .canvas-container {
   background: white;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
-  border: 1px solid #e5e7eb;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default; /* Add default cursor for canvas */
+}
+
+.canvas-container * {
+  pointer-events: auto; /* Allow pointer events for child elements */
+}
+
+.element {
+  position: absolute;
+  cursor: move;
+  transition: border-color 0.2s;
 }
 
 /* Control bar at the bottom */
