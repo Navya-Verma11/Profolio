@@ -1,34 +1,59 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useUserData } from '@nhost/react';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUserData, useNhostClient, useSignOut } from '@nhost/react';
 
-const ProjectCard = ({ project }) => {
-  return (
-    <div className="project-card">
-      <div className="card-thumbnail">
-        <div className="placeholder-thumbnail">
-          {project.thumbnail || 'Design Preview'}
-        </div>
-      </div>
-      <div className="card-details">
-        <h3>{project.name}</h3>
-        <p>Last modified: {project.lastModified}</p>
-      </div>
-    </div>
-  );
-};
 
 const Dashboard = () => {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const nhost = useNhostClient();
   const user = useUserData();
-  const projects = [
-    { 
-      id: 1, 
-      name: 'My Portfolio', 
-      lastModified: new Date().toLocaleDateString(),
-      thumbnail: ''
-    },
-    // Add more mock projects
-  ];
+  const { signOut } = useSignOut();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  useEffect(() => {
+    const fetchPortfolios = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
+        const query = `
+          query GetPortfolios($userId: uuid!) {
+            portfolios(where: { user_id: { _eq: $userId } }) {
+              id
+              data
+              background
+              created_at
+              name
+            }
+          }
+        `;
+        const { data, error } = await nhost.graphql.request(query, { userId: user.id });
+
+        if (error) throw error;
+
+        console.log('✅ Portfolios:', data.portfolios);
+
+        const formattedProjects = data.portfolios.map((portfolio) => ({
+          id: portfolio.id,
+          name: portfolio.name || `Design - ${new Date(portfolio.created_at).toLocaleDateString()}`,
+          lastModified: new Date(portfolio.created_at).toLocaleDateString(),
+        }));
+
+        setProjects(formattedProjects);
+      } catch (err) {
+        console.error('❌ Error loading portfolios:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPortfolios();
+  }, [user, nhost]);
 
   return (
     <div className="dashboard-container">
@@ -40,12 +65,45 @@ const Dashboard = () => {
           </svg>
           New Design
         </Link>
+        
+      <LogoutCard onLogout={handleLogout} />
       </div>
-      
-      <div className="projects-grid">
-        {projects.map(project => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
+
+      {loading ? (
+        <p>Loading projects...</p>
+      ) : (
+        <div className="projects-grid">
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ProjectCard = ({ project }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/editor/${project.id}`);
+  };
+
+  return (
+    <div className="project-card" onClick={handleClick}>
+      <div className="card-details">
+        <h3>{project.name}</h3>
+        <p>Last modified: {project.lastModified}</p>
+      </div>
+    </div>
+  );
+};
+
+const LogoutCard = ({ onLogout }) => {
+  return (
+    <div className="project-card logout-card" onClick={onLogout}>
+      <div className="card-details">
+        <h3>Logout</h3>
       </div>
     </div>
   );

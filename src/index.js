@@ -5,12 +5,14 @@ import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import nhost from './nhost';
 import App from './App';
 
-// Initialize Apollo Client
 const client = new ApolloClient({
-  uri: 'YOUR_GRAPHQL_ENDPOINT',  // Replace this with your GraphQL endpoint (e.g., nhost.graphql.getUrl())
+  uri: nhost.graphql.getUrl(),
   cache: new InMemoryCache(),
-  headers: {
-    'Authorization': `Bearer ${nhost.auth.getAccessToken()}` // Make sure your authentication is properly configured
+  headers: () => {
+    const token = nhost.auth.getAccessToken();
+    console.log("JWT Token:", token);
+    
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 });
 

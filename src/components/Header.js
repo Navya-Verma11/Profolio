@@ -5,58 +5,63 @@ import { gql } from '@apollo/client';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-
-const Header = ({ state, dispatch }) => {
-  const navigate = useNavigate();
-  const nhost = useNhostClient();
-  const user = useUserData();
-  const [isSaving, setIsSaving] = useState(false); 
-  
-  const SAVE_PORTFOLIO = gql`
-  mutation SavePortfolio($data: jsonb!, $background: String!) {
-    insert_portfolios_one(object: { data: $data, background: $background }) {
+const SAVE_PORTFOLIO = gql`
+  mutation SavePortfolio($data: jsonb!, $background: String!, $name: String!) {
+    insert_portfolios_one(object: { data: $data, background: $background, name: $name }) {
       id
     }
   }
 `;
 
-const handleSave = async () => {
-  if (!user) {
-    alert('You need to be logged in to save your portfolio.');
-    return;
-  }
+const Header = ({ state, dispatch }) => {
+  const navigate = useNavigate();
+  const nhost = useNhostClient();
+  const user = useUserData();
+  const [isSaving, setIsSaving] = useState(false);
+  const [name, setName] = useState('');
 
-  console.log('State before saving:', state);
-  console.log('State elements:', state?.pages?.[0]?.elements);
+  const handleSave = async () => {
+    if (!user) {
+      alert('You need to be logged in to save your portfolio.');
+      return;
+    }
 
-  const elements = state?.pages?.[0]?.elements; 
-  const background = state?.background || '#ffffff';
+    if (!name.trim()) {
+      alert('Please enter a name for your portfolio.');
+      return;
+    }
 
-  if (!elements || elements.length === 0) {
-    alert('No data to save');
-    return;
-  }
+    console.log('📥 State before saving:', state);
 
-  setIsSaving(true);
+    const elements = state?.pages?.[0]?.elements;
+    const background = state?.pages?.[0]?.background || '#ffffff';
 
-  try {
-    const { data, error } = await nhost.graphql.request(SAVE_PORTFOLIO, {
-      data: elements, 
-      background
-    });
+    if (!elements || elements.length === 0) {
+      alert('No data to save');
+      return;
+    }
 
-    if (error) throw error;
+    setIsSaving(true);
 
-    alert('Portfolio saved successfully!');
-    navigate('/dashboard');
-  } catch (err) {
-    console.error('Save error:', err);
-    alert('Failed to save portfolio.');
-  } finally {
-    setIsSaving(false);
-  }
-};
- 
+    try {
+      // ✅ Save to backend
+      const { data, error } = await nhost.graphql.request(SAVE_PORTFOLIO, {
+        data: elements,
+        background,
+        name, // ✅ Include name in mutation
+      });
+
+      if (error) throw error;
+
+      alert('Portfolio saved successfully!');
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('❌ Save error:', err);
+      alert('Failed to save portfolio.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDownload = async () => {
     const canvasElement = document.querySelector('.canvas-container');
@@ -67,7 +72,7 @@ const handleSave = async () => {
 
     try {
       const canvas = await html2canvas(canvasElement, {
-        scale: 2, // High resolution
+        scale: 2,
         useCORS: true,
       });
       const imgData = canvas.toDataURL('image/png');
@@ -79,7 +84,7 @@ const handleSave = async () => {
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save('portfolio.pdf');
     } catch (err) {
-      console.error('Download error:', err);
+      console.error('❌ Download error:', err);
       alert('Failed to download PDF');
     }
   };
@@ -87,10 +92,20 @@ const handleSave = async () => {
   return (
     <header className="header">
       <div className="header-left">
-        <Link to="/dashboard" className="logo">PROFOLIO</Link>
+        <Link to="/dashboard" className="logo">
+          PROFOLIO
+        </Link>
       </div>
 
       <div className="header-actions">
+        {/* ✅ Input for naming portfolio */}
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Portfolio Name"
+          className="name-input"
+        />
         <button
           onClick={() => dispatch({ type: 'RESET' })}
           className="btn reset-btn"
@@ -99,14 +114,25 @@ const handleSave = async () => {
         </button>
         <button
           onClick={handleSave}
-          className="btn save-btn"
+          className={`btn save-btn ${isSaving ? 'saving' : ''}`}
           disabled={isSaving}
+          style={{
+            backgroundColor: isSaving ? '#94a3b8' : '#10b981',
+            cursor: isSaving ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+          }}
         >
           {isSaving ? 'Saving...' : 'Save Design'}
         </button>
         <button
           onClick={handleDownload}
           className="btn download-btn"
+          style={{
+            backgroundColor: '#6366f1',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseOver={(e) => (e.target.style.background = '#4f46e5')}
+          onMouseOut={(e) => (e.target.style.background = '#6366f1')}
         >
           Download PDF
         </button>

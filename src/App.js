@@ -1,9 +1,10 @@
 import { useReducer, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useAuthenticationStatus, useSignOut, useUserData } from '@nhost/react';
 import nhost from './nhost';
+import { useNhostClient } from '@nhost/react';
 
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -98,12 +99,63 @@ function reducer(state, action) {
   }
 }
 
+
 const Editor = () => {
+  const { projectId } = useParams(); // ✅ Get project ID from URL
+  const nhost = useNhostClient();
+
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedElement, setSelectedElement] = useState(null);
-  const { signOut } = useSignOut();
-  const user = useUserData();
-  const { pages, currentPage } = state;
+
+  useEffect(() => {
+    const loadProject = async () => {
+      if (!projectId) return; // If no projectId → New project mode
+
+      try {
+        const query = `
+          query GetPortfolio($id: uuid!) {
+            portfolios_by_pk(id: $id) {
+              data
+              background
+            }
+          }
+        `;
+
+        const { data, error } = await nhost.graphql.request(query, { id: projectId });
+
+        if (error) throw error;
+
+        if (data.portfolios_by_pk) {
+          console.log('Loaded project:', data.portfolios_by_pk);
+
+          dispatch({
+            type: 'RESET'
+          });
+
+          dispatch({
+            type: 'SET_CURRENT_PAGE',
+            payload: 0
+          });
+
+          dispatch({
+            type: 'SET_BACKGROUND',
+            payload: data.portfolios_by_pk.background
+          });
+
+          data.portfolios_by_pk.data.forEach(element => {
+            dispatch({
+              type: 'ADD_ELEMENT',
+              payload: element
+            });
+          });
+        }
+      } catch (err) {
+        console.error('Error loading project:', err);
+      }
+    };
+
+    loadProject();
+  }, [projectId, nhost]);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -116,16 +168,16 @@ const Editor = () => {
         <div className="main-content">
           <LeftSidebar 
             dispatch={dispatch} 
-            currentPage={currentPage} // Pass current page to left sidebar
+            currentPage={state.currentPage}
           />
           <Canvas 
-            elements={pages[currentPage].elements}
-            background={pages[currentPage].background}
+            elements={state.pages[state.currentPage].elements}
+            background={state.pages[state.currentPage].background}
             dispatch={dispatch}
             selectedElement={selectedElement}
             setSelectedElement={setSelectedElement}
-            pages={pages}
-            currentPage={currentPage}
+            pages={state.pages}
+            currentPage={state.currentPage}
           />
           <RightSidebar 
             element={selectedElement}
