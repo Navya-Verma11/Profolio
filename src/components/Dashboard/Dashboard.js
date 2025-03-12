@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserData, useNhostClient, useSignOut } from '@nhost/react';
-
+import Profile from '../Profile/Profile';
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
   const nhost = useNhostClient();
   const user = useUserData();
   const { signOut } = useSignOut();
@@ -14,6 +15,10 @@ const Dashboard = () => {
   const handleLogout = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const toggleProfile = () => {
+    setShowProfile(!showProfile);
   };
 
   useEffect(() => {
@@ -59,24 +64,36 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>Welcome back, {user?.displayName || 'Designer'}!</h1>
-        <Link to="/editor/new" className="create-new-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Design
-        </Link>
-        
-      <LogoutCard onLogout={handleLogout} />
+        <div className="dashboard-actions">
+          <Link to="/editor/new" className="create-new-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Design
+          </Link>
+          <button className="profile-btn" onClick={toggleProfile}>
+            {showProfile ? "Hide Profile" : "Edit Profile"}
+          </button>
+          <LogoutCard onLogout={handleLogout} />
+        </div>
       </div>
 
-      {loading ? (
-        <p>Loading projects...</p>
-      ) : (
-        <div className="projects-grid">
-          {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+      {showProfile && (
+        <div className="profile-section">
+          <Profile onProfileUpdate={() => setShowProfile(false)} />
         </div>
+      )}
+
+      {!showProfile && (
+        loading ? (
+          <p>Loading projects...</p>
+        ) : (
+          <div className="projects-grid">
+            {projects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        )
       )}
     </div>
   );

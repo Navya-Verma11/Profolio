@@ -6,7 +6,6 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
     onUpdate({ 
       x: d.x / scale,
       y: d.y / scale,
-      // Make sure to preserve the page property
       page: element.page
     });
   };
@@ -14,19 +13,73 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
   const handleResizeStop = (e, direction, ref, delta, position) => {
     onUpdate({
       width: parseInt(ref.style.width),
-      height: parseInt(ref.style.height),
+      height: element.type === 'line' ? element.height : parseInt(ref.style.height),
       x: position.x / scale,
       y: position.y / scale,
-      // Make sure to preserve the page property
       page: element.page
     });
+  };
+
+  const renderContent = () => {
+    switch(element.type) {
+      case 'text':
+        return (
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            style={{
+              width: '100%',
+              height: '100%',
+              padding: '8px',
+              outline: 'none',
+              fontFamily: element.fontFamily,
+              fontSize: `${element.fontSize}px`,
+              color: element.color,
+              background: 'transparent',
+              textDecoration: element.hyperlink ? 'underline' : 'none'
+            }}
+            onBlur={(e) => onUpdate({ 
+              content: e.target.innerHTML,
+              page: element.page
+            })}
+            dangerouslySetInnerHTML={{ __html: element.content || 'Click to edit' }}
+          />
+        );
+      
+      case 'line':
+        return (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              borderBottom: `${element.height}px solid ${element.color || '#000000'}`
+            }}
+          />
+        );
+
+      case 'image':
+        return (
+          <img
+            src={element.src}
+            alt="uploaded"
+            style={{ 
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
     <Rnd
       size={{ 
         width: element.width * scale, 
-        height: element.height * scale 
+        height: element.type === 'line' ? 20 * scale : element.height * scale // Minimum height for draggability
       }}
       position={{ 
         x: element.x * scale, 
@@ -35,7 +88,7 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
       bounds="parent"
-      enableResizing={{
+      enableResizing={element.type !== 'line' ? {
         bottom: true,
         bottomLeft: true,
         bottomRight: true,
@@ -44,7 +97,7 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
         top: true,
         topLeft: true,
         topRight: true
-      }}
+      } : false}
       style={{
         zIndex: isSelected ? 1000 : 1,
         border: isSelected ? '2px dashed #4f46e5' : 'none',
@@ -58,37 +111,22 @@ const Element = ({ element, isSelected, onSelect, onUpdate, scale }) => {
       data-element-id={element.id}
       data-element-page={element.page}
     >
-      {element.type === 'text' ? (
-        <div
-          contentEditable
-          suppressContentEditableWarning
+      {element.type === 'text' && element.hyperlink ? (
+        <a
+          href={element.hyperlink}
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
+            display: 'block',
             width: '100%',
             height: '100%',
-            padding: '8px',
-            outline: 'none',
-            fontFamily: element.fontFamily,
-            fontSize: `${element.fontSize}px`,
-            color: element.color
+            textDecoration: 'none',
+            color: 'inherit'
           }}
-          onBlur={(e) => onUpdate({ 
-            content: e.target.innerHTML,
-            page: element.page // Preserve page on updates
-          })}
-          dangerouslySetInnerHTML={{ __html: element.content || 'Click to edit' }}
-        />
-      ) : (
-        <img
-          src={element.src}
-          alt="uploaded"
-          style={{ 
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            pointerEvents: 'none' 
-          }}
-        />
-      )}
+        >
+          {renderContent()}
+        </a>
+      ) : renderContent()}
     </Rnd>
   );
 };

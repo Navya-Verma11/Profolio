@@ -18,7 +18,7 @@ const LeftSidebar = ({ dispatch, currentPage }) => {
             y: 100,
             width: 200,
             height: 200,
-            page: currentPage // Add current page reference
+            page: currentPage
           }
         });
       };
