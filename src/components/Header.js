@@ -1,60 +1,62 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserData, useNhostClient } from '@nhost/react';
-import { gql, useMutation } from '@apollo/client';
+import { gql } from '@apollo/client';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-const SAVE_PORTFOLIO_MUTATION = gql`
-  mutation SavePortfolio($user_id: uuid!, $name: String!, $json_url: String!) {
-    insert_portfolios_one(object: { 
-      user_id: $user_id, 
-      name: $name, 
-      json_url: $json_url 
-    }) {
-      id
-    }
-  }
-`;
 
 const Header = ({ state, dispatch }) => {
   const navigate = useNavigate();
   const nhost = useNhostClient();
   const user = useUserData();
-  const [savePortfolio] = useMutation(SAVE_PORTFOLIO_MUTATION);
-
-  // ✅ Save Portfolio Function
-  const handleSave = async () => {
-    if (!user) return;
-
-    try {
-      const portfolioData = JSON.stringify(state.pages);
-      const file = new File([portfolioData], `portfolio-${Date.now()}.json`, {
-        type: 'application/json'
-      });
-
-      const { fileMetadata, error } = await nhost.storage.upload({ file });
-      if (error) throw error;
-
-      const fileUrl = nhost.storage.getPublicUrl({ fileId: fileMetadata.id });
-
-      const { data, errors } = await savePortfolio({
-        variables: {
-          user_id: user.id,
-          name: `Design ${new Date().toLocaleDateString()}`,
-          json_url: fileUrl
-        }
-      });
-
-      if (errors) throw errors;
-      navigate('/dashboard');
-      alert('Design saved successfully!');
-
-    } catch (err) {
-      console.error('Save error:', err);
-      alert('Error saving design');
+  const [isSaving, setIsSaving] = useState(false); 
+  
+  const SAVE_PORTFOLIO = gql`
+  mutation SavePortfolio($data: jsonb!, $background: String!) {
+    insert_portfolios_one(object: { data: $data, background: $background }) {
+      id
     }
-  };
+  }
+`;
+
+const handleSave = async () => {
+  if (!user) {
+    alert('You need to be logged in to save your portfolio.');
+    return;
+  }
+
+  console.log('State before saving:', state);
+  console.log('State elements:', state?.pages?.[0]?.elements);
+
+  const elements = state?.pages?.[0]?.elements; 
+  const background = state?.background || '#ffffff';
+
+  if (!elements || elements.length === 0) {
+    alert('No data to save');
+    return;
+  }
+
+  setIsSaving(true);
+
+  try {
+    const { data, error } = await nhost.graphql.request(SAVE_PORTFOLIO, {
+      data: elements, 
+      background
+    });
+
+    if (error) throw error;
+
+    alert('Portfolio saved successfully!');
+    navigate('/dashboard');
+  } catch (err) {
+    console.error('Save error:', err);
+    alert('Failed to save portfolio.');
+  } finally {
+    setIsSaving(false);
+  }
+};
+ 
 
   const handleDownload = async () => {
     const canvasElement = document.querySelector('.canvas-container');
@@ -64,21 +66,18 @@ const Header = ({ state, dispatch }) => {
     }
 
     try {
-      // Capture canvas and convert to image
       const canvas = await html2canvas(canvasElement, {
         scale: 2, // High resolution
-        useCORS: true, // Fixes cross-origin issues
+        useCORS: true,
       });
       const imgData = canvas.toDataURL('image/png');
 
-      // Create PDF
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; // A4 width in mm
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save('portfolio.pdf');
-
     } catch (err) {
       console.error('Download error:', err);
       alert('Failed to download PDF');
@@ -90,16 +89,25 @@ const Header = ({ state, dispatch }) => {
       <div className="header-left">
         <Link to="/dashboard" className="logo">PROFOLIO</Link>
       </div>
-      
+
       <div className="header-actions">
-        <button onClick={() => dispatch({ type: 'RESET' })} className="btn reset-btn">
+        <button
+          onClick={() => dispatch({ type: 'RESET' })}
+          className="btn reset-btn"
+        >
           Reset
         </button>
-        <button onClick={handleSave} className="btn save-btn">
-          Save Design
+        <button
+          onClick={handleSave}
+          className="btn save-btn"
+          disabled={isSaving}
+        >
+          {isSaving ? 'Saving...' : 'Save Design'}
         </button>
-        {/* ✅ Download Button */}
-        <button onClick={handleDownload} className="btn download-btn">
+        <button
+          onClick={handleDownload}
+          className="btn download-btn"
+        >
           Download PDF
         </button>
       </div>
