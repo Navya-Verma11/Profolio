@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import { useDrop } from 'react-dnd';
 import Element from './Element';
 import AddIcon from '../assets/AddIcon';
@@ -6,11 +6,10 @@ import RemoveIcon from '../assets/RemoveIcon';
 import ZoomInIcon from '../assets/ZoomInIcon';
 import ZoomOutIcon from '../assets/ZoomOutIcon';
 
-// A4 dimensions in pixels (210mm x 297mm at 96dpi)
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
 
-const Canvas = ({ elements, background, dispatch, selectedElement, setSelectedElement, pages, currentPage }) => {
+const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, setSelectedElement, pages, currentPage }, ref) => {
   const [scale, setScale] = useState(1);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -84,8 +83,11 @@ const Canvas = ({ elements, background, dispatch, selectedElement, setSelectedEl
   return (
     <div className="canvas-wrapper" onWheel={handleWheel}>
       <div
-        className="canvas-container"
-        ref={drop}
+        className="canvas-container canvas"
+        ref={(node) => {
+          drop(node); // Connect drag-and-drop reference
+          if (ref) ref.current = node; // Forward the ref correctly
+        }}
         style={{
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
@@ -95,27 +97,25 @@ const Canvas = ({ elements, background, dispatch, selectedElement, setSelectedEl
           border: isOver ? '2px dashed #4f46e5' : 'none'
         }}
       >
-       
-{elements
-  .filter(element => element.page === currentPage)
-  .map(element => (
-    <Element
-      key={element.id}
-      element={element}
-      isSelected={selectedElement?.id === element.id}
-      onSelect={setSelectedElement}
-      onUpdate={(updates) => dispatch({
-        type: 'UPDATE_ELEMENT',
-        payload: { ...element, ...updates }
-      })}
-      scale={scale} // Ensure scale is passed here
-    />
-))}
+        {elements
+          .filter(element => element.page === currentPage)
+          .map(element => (
+            <Element
+              key={element.id}
+              element={element}
+              isSelected={selectedElement?.id === element.id}
+              onSelect={setSelectedElement}
+              onUpdate={(updates) => dispatch({
+                type: 'UPDATE_ELEMENT',
+                payload: { ...element, ...updates }
+              })}
+              scale={scale}
+            />
+          ))}
       </div>
 
       {/* Control Bar */}
       <div className="control-bar">
-        {/* Page Controls */}
         <button className="page-action-button add-button" onClick={handleAddPage}>
           <AddIcon /> New Page
         </button>
@@ -134,7 +134,6 @@ const Canvas = ({ elements, background, dispatch, selectedElement, setSelectedEl
           Next Page →
         </button>
 
-        {/* Zoom Controls */}
         <button className="zoom-button" onClick={() => setScale(s => Math.min(2, s + 0.1))} disabled={scale >= 2}>
           <ZoomInIcon />
         </button>
@@ -147,6 +146,6 @@ const Canvas = ({ elements, background, dispatch, selectedElement, setSelectedEl
       </div>
     </div>
   );
-};
+});
 
 export default Canvas;

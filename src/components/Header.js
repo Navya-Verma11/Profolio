@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUserData, useNhostClient } from '@nhost/react';
 import { gql, useMutation } from '@apollo/client';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const SAVE_PORTFOLIO_MUTATION = gql`
   mutation SavePortfolio($user_id: uuid!, $name: String!, $json_url: String!) {
@@ -21,6 +23,7 @@ const Header = ({ state, dispatch }) => {
   const user = useUserData();
   const [savePortfolio] = useMutation(SAVE_PORTFOLIO_MUTATION);
 
+  // ✅ Save Portfolio Function
   const handleSave = async () => {
     if (!user) return;
 
@@ -53,6 +56,35 @@ const Header = ({ state, dispatch }) => {
     }
   };
 
+  const handleDownload = async () => {
+    const canvasElement = document.querySelector('.canvas-container');
+    if (!canvasElement) {
+      alert('Nothing to download');
+      return;
+    }
+
+    try {
+      // Capture canvas and convert to image
+      const canvas = await html2canvas(canvasElement, {
+        scale: 2, // High resolution
+        useCORS: true, // Fixes cross-origin issues
+      });
+      const imgData = canvas.toDataURL('image/png');
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save('portfolio.pdf');
+
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Failed to download PDF');
+    }
+  };
+
   return (
     <header className="header">
       <div className="header-left">
@@ -65,6 +97,10 @@ const Header = ({ state, dispatch }) => {
         </button>
         <button onClick={handleSave} className="btn save-btn">
           Save Design
+        </button>
+        {/* ✅ Download Button */}
+        <button onClick={handleDownload} className="btn download-btn">
+          Download PDF
         </button>
       </div>
     </header>
