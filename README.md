@@ -3,7 +3,7 @@
 ## Introduction
 Profolio is a user-friendly portfolio builder designed to simplify the process of creating professional portfolios. With an intuitive drag-and-drop interface, real-time preview, and easy export functionality, Profolio makes portfolio creation accessible to everyone, regardless of technical expertise.
 
-**Live Demo:** [View Profolio on Vercel](profolio-flax-six.vercel.app)
+**Live Demo:** [View ProFolio on Vercel](https://profolio-flax-six.vercel.app)
 
 ## Problem Statement
 Many existing portfolio creation tools suffer from:
@@ -102,8 +102,8 @@ We welcome contributions to Profolio! Please follow these steps:
 5. Open a Pull Request
 
 ## Team
-- [Navya Verma]{https://github.com/Navya-Verma11} - Developer
-- [Tanya Singh]{https://github.com/TanyaSingh103} - Developer
+- [Navya Verma](https://github.com/Navya-Verma11) - Developer  
+- [Tanya Singh](https://github.com/TanyaSingh103) - Developer 
 
 ## Acknowledgments
 Special thanks to the Women Engineers Program for their support and guidance throughout this project.
