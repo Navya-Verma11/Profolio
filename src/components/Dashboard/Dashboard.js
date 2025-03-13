@@ -41,7 +41,7 @@ const Dashboard = () => {
 
         if (error) throw error;
 
-        console.log('✅ Portfolios:', data.portfolios);
+        console.log('Portfolios:', data.portfolios);
 
         const formattedProjects = data.portfolios.map((portfolio) => ({
           id: portfolio.id,
@@ -51,7 +51,7 @@ const Dashboard = () => {
 
         setProjects(formattedProjects);
       } catch (err) {
-        console.error('❌ Error loading portfolios:', err);
+        console.error('Error loading portfolios:', err);
       } finally {
         setLoading(false);
       }

@@ -31,7 +31,7 @@ const Header = ({ state, dispatch }) => {
       return;
     }
 
-    console.log('📥 State before saving:', state);
+    console.log('State before saving:', state);
 
     const elements = state?.pages?.[0]?.elements;
     const background = state?.pages?.[0]?.background || '#ffffff';
@@ -44,11 +44,10 @@ const Header = ({ state, dispatch }) => {
     setIsSaving(true);
 
     try {
-      // ✅ Save to backend
       const { data, error } = await nhost.graphql.request(SAVE_PORTFOLIO, {
         data: elements,
         background,
-        name, // ✅ Include name in mutation
+        name, 
       });
 
       if (error) throw error;
@@ -56,7 +55,7 @@ const Header = ({ state, dispatch }) => {
       alert('Portfolio saved successfully!');
       navigate('/dashboard');
     } catch (err) {
-      console.error('❌ Save error:', err);
+      console.error('Save error:', err);
       alert('Failed to save portfolio.');
     } finally {
       setIsSaving(false);
@@ -84,7 +83,7 @@ const Header = ({ state, dispatch }) => {
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save('portfolio.pdf');
     } catch (err) {
-      console.error('❌ Download error:', err);
+      console.error('Download error:', err);
       alert('Failed to download PDF');
     }
   };
@@ -98,7 +97,6 @@ const Header = ({ state, dispatch }) => {
       </div>
 
       <div className="header-actions">
-        {/* ✅ Input for naming portfolio */}
         <input
           type="text"
           value={name}

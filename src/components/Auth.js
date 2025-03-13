@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSignInEmailPassword, useSignUpEmailPassword, useAuthenticationStatus } from '@nhost/react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
+import { useNavigate } from 'react-router-dom'; 
 import './Auth.css';
 
 const Auth = () => {
@@ -13,11 +13,11 @@ const Auth = () => {
   const { signUpEmailPassword, isLoading: signingUp, error: signUpError } = useSignUpEmailPassword();
   const { isAuthenticated } = useAuthenticationStatus();
 
-  const navigate = useNavigate(); // Hook for redirection
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/editor'); // Redirect to editor page after login
+      navigate('/editor'); 
     }
   }, [isAuthenticated, navigate]);
 

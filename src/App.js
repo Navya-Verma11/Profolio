@@ -101,7 +101,7 @@ function reducer(state, action) {
 
 
 const Editor = () => {
-  const { projectId } = useParams(); // ✅ Get project ID from URL
+  const { projectId } = useParams(); 
   const nhost = useNhostClient();
 
   const [state, dispatch] = useReducer(reducer, initialState);

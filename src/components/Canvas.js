@@ -14,7 +14,6 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const canvasRef = useRef(null);
 
-  // The key fix: include currentPage in the drop dependencies
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'element',
     drop: (item, monitor) => {
@@ -31,7 +30,7 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
             y: (offset.y - rect.top - item.height / 2) / scale,
             color: '#000000',
             fontFamily: 'Arial',
-            page: currentPage // Ensure this is set correctly
+            page: currentPage
           }
         });
       }
@@ -39,7 +38,7 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }), [scale, currentPage]); // Add currentPage dependency here
+  }), [scale, currentPage]); 
 
   const handleCanvasClick = (e) => {
     if (e.target === canvasRef.current) {
@@ -106,7 +105,7 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
         ref={(node) => {
           canvasRef.current = node;
           drop(node);
-          if (ref) ref.current = node; // Forward the ref correctly
+          if (ref) ref.current = node; 
         }}
         style={{
           transform: `scale(${scale})`,
@@ -118,7 +117,7 @@ const Canvas = forwardRef(({ elements, background, dispatch, selectedElement, se
           position: 'relative',
           cursor: 'default'
         }}
-        data-page={currentPage} // Add a data attribute to help with debugging
+        data-page={currentPage} 
       >
         {elements
           .filter(element => element.page === currentPage)
